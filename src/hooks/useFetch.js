@@ -6,8 +6,10 @@ const useFetch = (url) => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
+        const abortController = new AbortController();
+        //The AbortController interface represents a controller object that allows you to abort one or more Web requests as and when desired.
         setTimeout(() => {
-            fetch(url)
+            fetch(url, { signal: abortController.signal })
                 .then(res => {
                     if (!res.ok) { // error coming back from server
                         throw Error('could not fetch the data for that resource');
@@ -20,11 +22,17 @@ const useFetch = (url) => {
                     setError(null);
                 })
                 .catch(err => {
-                    // auto catches network / connection error
-                    setIsPending(false);
-                    setError(err.message);
+                    if (err.name === 'AbortError') {
+                        console.log('fetch aborted')
+                    } else {
+                        // auto catches network / connection error
+                        setIsPending(false);
+                        setError(err.message);
+                    }
                 })
         }, 1000);
+
+        return () => abortController.abort();
     }, [url])
 
     return { data, isPending, error };
